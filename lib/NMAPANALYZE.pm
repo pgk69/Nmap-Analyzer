@@ -1,28 +1,28 @@
-package PROGRAMM;
+package NMAPANALYZE;
 
 #-------------------------------------------------------------------------------------------------
-# Letzte Aenderung:     $Date: 2013-04-05 13:53:40 +0200 (Fr, 05 Apr 2013) $
-#                       $Revision: 1003 $
-#                       $Author: xck90n1 $
+# Letzte Aenderung:     $Date:  $
+#                       $Revision:  $
+#                       $Author:  $
 #
-# Aufgabe:				- Ausfuehrbarer Code von programm.pl
+# Aufgabe:				- Ausfuehrbarer Code von nmapanalyze.pl
 #
-# $Id: PROGRAMM.pm 1003 2013-04-05 11:53:40Z xck90n1 $
-# $URL: https://svn.fiducia.de/svn/multicom/trunk/multicom/Framework_OO/lib/PROGRAMM.pm $
+# $Id:  $
+# $URL:  $
 #-------------------------------------------------------------------------------------------------
 
 use 5.004;
 use strict;
 use vars qw($VERSION $SVN $OVERSION);
 
-use constant SVN_ID => '($Id: PROGRAMM.pm 1003 2013-04-05 11:53:40Z xck90n1 $)
+use constant SVN_ID => '($Id:  $)
 
-$Author: xck90n1 $ 
+$Author:  $ 
 
-$Revision: 1003 $ 
-$Date: 2013-04-05 13:53:40 +0200 (Fr, 05 Apr 2013) $ 
+$Revision:  $ 
+$Date:  $ 
 
-$URL: https://svn.fiducia.de/svn/multicom/trunk/multicom/Framework_OO/lib/PROGRAMM.pm $
+$URL:  $
 
 ';
 

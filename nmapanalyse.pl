@@ -2,30 +2,30 @@ eval 'exec perl -wS $0 ${1+"$@"}'
   if 0;
 
 #-------------------------------------------------------------------------------------------------
-# Letzte Aenderung:     $Date: 2013-04-05 13:53:40 +0200 (Fr, 05 Apr 2013) $
-#                       $Revision: 1003 $
-#                       $Author: xck90n1 $
+# Letzte Aenderung:     $Date:  $
+#                       $Revision:  $
+#                       $Author:  $
 #
-# Aufgabe:				- was tun
+# Aufgabe:        - Ausfuehrbarer Code von nmapanalyze.pl
 #
-# $Id: programm.pl 1003 2013-04-05 11:53:40Z xck90n1 $
-# $URL: https://svn.fiducia.de/svn/multicom/trunk/multicom/Framework_OO/programm.pl $
+# $Id:  $
+# $URL:  $
 #-------------------------------------------------------------------------------------------------
 
-# Letzte Aenderung: Transaktionslogik in SPLIT.pm eingefuehrt
+# Letzte Aenderung: 
 
 use 5.010;
 use strict;
 use vars qw($VERSION $SVN);
 
-use constant SVN_ID => '($Id: programm.pl 1003 2013-04-05 11:53:40Z xck90n1 $)
+use constant SVN_ID => '($Id:  $)
 
-$Author: xck90n1 $ 
+$Author:  $ 
 
-$Revision: 1003 $ 
-$Date: 2013-04-05 13:53:40 +0200 (Fr, 05 Apr 2013) $ 
+$Revision:  $ 
+$Date:  $ 
 
-$URL: https://svn.fiducia.de/svn/multicom/trunk/multicom/Framework_OO/programm.pl $
+$URL:  $
 
 ';
 
