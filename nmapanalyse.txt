@@ -58,11 +58,8 @@
 0x00014 = Lockfile <%s> angelegt.
 
 0x08000 = Fehler beim Schreiben des Logfiles <%s>
-# 0x0f008 = Kann das Modul <%s> nicht laden
 0x08001 = Kann das Modul <%s> nicht laden
-# 0x0f009 = Erforderliche INI-Variable nicht gesetzt: [%s] %s
 0x08002 = Erforderliche INI-Variable nicht gesetzt: [%s] %s
-# 0x0f003 = Zu wenig oder fehlerhafte Aufrufparameter <%s>
 0x08003 = Zu wenig oder fehlerhafte Aufrufparameter <%s>
 
 ##########################################################################################
@@ -79,9 +76,7 @@
 # Modul Configuration
 #            Meldungen: 0x00400-0x004ff
 #            Fehler:    0x08400-0x084ff
-# 0x0f001 = Fehler beim Lesen der Konfigurationsdatei oder in der Konfigurationsdatei <%s>
 0x08400 = Fehler beim Lesen der Konfigurationsdatei oder in der Konfigurationsdatei <%s>
-# 0x0f002 = <%s> in der Konfigurationsdatei Sektion <%s> fuer Variable <%s> definiert.
 0x08401 = <%s> in der Konfigurationsdatei Sektion <%s> fuer Variable <%s> definiert.
 
 ##########################################################################################
@@ -90,7 +85,6 @@
 #            Fehler:    0x08500-0x085ff
 # Modul DBAccess
 0x00500 = DB-Zugriff korrekt: <%s> <%s>
-# 0x0f007 = Kann mich nicht mit der Datenquelle <%s> verbinden (%s)
 0x08500 = DB-Zugriff fehlerhaft: <%s> <%s>
 
 #########################################################################################

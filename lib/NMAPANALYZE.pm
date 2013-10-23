@@ -111,6 +111,10 @@ sub _init {
 
   $self->{Startzeit} = time();
   
+  $VERSION = $self->version(shift(@args));
+  
+  Trace->Trc('S', 1, 0x00001, Configuration->prg, $VERSION . " (" . $$ . ")" . " Test: " . Trace->test . " Parameter: " . CmdLine->new()->{ArgStrRAW});
+  
   if (Configuration->config('Prg', 'Plugin')) {
 
     # refs ausschalten wg. dyn. Proceduren
@@ -198,28 +202,21 @@ sub DESTROY {
   if ($self->{Lock}) {$self->{Lock}->unlock($self->{LockFile})}
 }
 
-sub autocommit {
-  #################################################################
-  #     Ggf. Zyklisches Absetzen des Commits
-  #
+sub lese_Fileliste {
   my $self = shift;
+  my @args = @_;
+  
+  my $eingabe = Configuration->config('Eingabe', 'Eingabeverzeichnis');
+  $self->{fileList} = Utils::fetchFileList($eingabe);
+}
 
-  my $merker          = $self->{subroutine};
-  $self->{subroutine} = (caller(0))[3];
-  Trace->Trc('S', 1, 0x00001, $self->{subroutine}, $self->argument(0));
-
-  if ($self->{AutoCommit} > 0) {
-    if ($self->{AutoCommit}-- == 0) {
-      $self->{AutoCommit} = Configuration->config('DB', 'AUTOCOMMIT') || 0;
-      DBAccess->commit() or Trace->Exit(0x104, 0, "Error: $DBI::errstr");
-    }
-  }
-
-  Trace->Trc( 'S', 1, 0x00002, $self->{subroutine} );
-  $self->{subroutine} = $merker;
-
-  # Explizite Uebergabe des Returncodes noetig, da sonst ein Fehler auftritt
-  return 1;
+sub nextFile {
+  my $self = shift;
+  my @args = @_;
+  
+  my $rc = shift(@{$self->{fileList}});
+  
+  return $rc;
 }
 
 
