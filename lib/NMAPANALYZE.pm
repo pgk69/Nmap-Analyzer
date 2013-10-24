@@ -56,11 +56,7 @@ use File::Path qw(mkpath);
 use MIME::Lite;
 use IO::Compress::Gzip qw(gzip $GzipError);
 use LockFile::Simple qw(lock trylock unlock);
-
-#
-# Perl2Exe Compilerdirectiven
-#
-#perl2exe_include DBD::DB2
+use Data::Dumper;
 
 #
 # Konstantendefinition
@@ -73,6 +69,7 @@ use LockFile::Simple qw(lock trylock unlock);
 #
 # Methodendefinition
 #
+
 sub version {
   my $self     = shift();
   my $pversion = shift();
@@ -89,6 +86,7 @@ sub version {
   return wantarray() ? ($VERSION, $OVERSION) : $VERSION;
 }
 
+
 sub new {
   #################################################################
   #     Legt ein neues Objekt an
@@ -102,6 +100,7 @@ sub new {
 
   return $ptr;
 }
+
 
 sub _init {
   #################################################################
@@ -178,6 +177,7 @@ sub _init {
   $self->{AutoCommit} = Configuration->config('DB', 'AUTOCOMMIT') || 0;
 }
 
+
 sub DESTROY {
   #################################################################
   #     Zerstoert das Objekt an
@@ -202,6 +202,7 @@ sub DESTROY {
   if ($self->{Lock}) {$self->{Lock}->unlock($self->{LockFile})}
 }
 
+
 sub lese_Fileliste {
   my $self = shift;
   my @args = @_;
@@ -209,6 +210,7 @@ sub lese_Fileliste {
   my $eingabe = Configuration->config('Eingabe', 'Eingabeverzeichnis');
   $self->{fileList} = Utils::fetchFileList($eingabe);
 }
+
 
 sub nextFile {
   my $self = shift;
@@ -219,5 +221,145 @@ sub nextFile {
   return $rc;
 }
 
+
+sub getInfo() {
+  my $self   = shift;
+  my $target = shift;
+  my $object = shift;
+  my @args   = @_;
+  
+  foreach (@args) {
+    $target->{$_} = join(' ', $object->$_);
+  }
+  
+  return 0;;
+}
+  
+
+sub getCipher () {
+  my $self    = shift;
+  my $service = shift;
+
+  my @scriptList = $service->scripts;
+  
+  foreach my $scriptName (@scriptList) {
+    my @scriptContent = $service->scripts($scriptName); 
+    print Dumper($scriptName, @scriptContent); 
+    my $breackpoint;
+    
+    # html-title-db
+    if      ($scriptName eq "html-title-db") {
+
+    } elsif ($scriptName eq "my-ssl-cert") {
+
+    } elsif ($scriptName eq "my-ssl-enum-ciphers") {
+
+    } elsif ($scriptName eq "") {
+
+    } elsif ($scriptName eq "") {
+
+    } elsif ($scriptName eq "") {
+
+    }        
+  }
+  
+  # CERTIFICATE DETAILS
+#  foreach my $scr (@scriptList) {
+#    if ($scr eq "html-title-db") { 
+#      $html_title = [string]$scr.output
+#      $html_title = $html_title.Replace( "`n", "").Replace("`r", "").Replace(",", "")
+#    } elseif ($scr.id -eq "my-ssl-cert") { 
+#      foreach ($t in $scr.table) {
+#        if ($t.key -eq "subject") {
+#          foreach ($e in $t.elem) {
+#            if ($e.key -eq "commonName") { 
+#              $subject_common_name = $e.InnerXML
+#            }
+#          }
+#        } elseif ($t.key -eq "issuer") {
+#          foreach ($e in $t.elem) {
+#            if ($e.key -eq "commonName") { 
+#              $issuer_common_name = $e.InnerXML
+#            }
+#          }
+#        } elseif ($t.key -eq "pubkey") {
+#          foreach ($e in $t.elem) {
+#            if ($e.key -eq "type") { 
+#              $cert_key_type = $e.InnerXML
+#            }
+#            if ($e.key -eq "bits") { 
+#              $cert_key_bits = $e.InnerXML
+#            }
+#          }
+#        } elseif ($t.key -eq "validity") {
+#          foreach ($e in $t.elem) {
+#            if ($e.key -eq "notBefore") { 
+#              $cert_not_before = [string]$e.InnerXML
+#              $cert_not_before = $cert_not_before.Substring(0,10)
+#            }
+#            if ($e.key -eq "notAfter") { 
+#              $cert_not_after = [string]$e.InnerXML
+#              $cert_not_after = $cert_not_after.Substring(0,10)
+#            }
+#          }          
+#        } else {
+#          # ERROR HANDLING !!!!
+#        }
+#      }
+#         
+#      $cert_filename = Write-Certificate($scr)
+#      # FIXME INVOKE OPENSSL CERTIFICATE ANALYSIS HERE
+#    } elseif ($scr.id -eq "my-ssl-enum-ciphers" )
+#    # SCAN FOR WEAK SSL CIPHERS
+#      {
+#         foreach( $tv in $scr.table )
+#         {
+#                  $SSLTLS_version = $tv.key
+#          $SSLTLS_supported["$SSLTLS_version"] = "true"
+#          
+#          # FIXME USE GT IT SECURITY APPROVED CIPHERSUITES
+#          foreach( $t in $tv.table )
+#          {
+#                 if( $t.key -eq "ciphers" )
+#             {
+#                        foreach( $t2 in $t.table )
+#                        {
+#            
+#                 $isweak = ""
+#               $csuite = ""
+#                           foreach( $e in $t2.elem )
+#               {           
+#                  if( $e.key -eq "strength" )
+#                  {
+#                     $isweak = $e.InnerXML
+#                  }
+#                  elseif( $e.key -eq "name")
+#                  {
+#                     $csuite = $e.InnerXML
+#                  }
+#               }                
+#               
+#                           if( $isweak -eq "weak" )
+#                           {
+#                  $cipher_suite_bad["$SSLTLS_version"] += "$csuite" + " "
+#               }
+#               else
+#               {
+#                  $cipher_suite_good["$SSLTLS_version"] += "$csuite" + " "
+#               }
+#                        }          
+#             }
+#                  }
+#         }
+#               $cipher_suite_weak = $scr.elem.InnerXML         
+#      }
+#     }
+#     
+#     if ( $subject_common_name -eq $issuer_common_name )
+#     {
+#        $self_signed = "true"
+#     }   
+#    }
+}
 
 1;
