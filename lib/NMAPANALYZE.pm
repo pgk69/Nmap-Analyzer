@@ -147,17 +147,13 @@ sub _init {
   
   # Test der benoetigten INI-Variablen
   # DB-Zugriff
-  #$self->Exit(1, 0, 0x08002, 'DB', 'MC_DB')                if (!defined($self->config('DB', 'MC_DB')));
-  #$self->Exit(1, 0, 0x08002, 'DB', 'FID_DB')               if (!defined($self->config('DB', 'FID_DB')));
+  #$self->Exit(1, 0, 0x08002, 'DB', 'DB')                if (!defined($self->config('DB', 'DB')));
 
   # Ergebnisausgabe und Sicherung
-  #$self->Exit(1, 0, 0x08002, 'Ausgabe', 'Log')             if (!defined($self->config('Ausgabe', 'Log')));
-  #$self->Exit(1, 0, 0x08002, 'Ausgabe', 'Err')             if (!defined($self->config('Ausgabe', 'Err')));
   #$self->Exit(1, 0, 0x08002, 'Ausgabe', 'Out')             if (!defined($self->config('Ausgabe', 'Out')));
-  #$self->Exit(1, 0, 0x08002, 'Ausgabe', 'SICHERUNG')       if (!defined($self->config('Ausgabe', 'SICHERUNG')));
 
   if (Configuration->config('Prg', 'LockFile')) {
-    $self->{LockFile} = Utils::extendString(Configuration->config('Prg', 'LockFile'), "BIN|$Bin|SCRIPT|" . uc($Script));
+    $self->{LockFile} = File::Spec->canonpath(Utils::extendString(Configuration->config('Prg', 'LockFile'), "BIN|$Bin|SCRIPT|" . uc($Script)));
     $self->{Lock} = LockFile::Simple->make(-max => 5, -delay => 1, -format => '%f', -autoclean => 1, -stale => 1, -wfunc => undef);
     my $errtxt;
     $SIG{'__WARN__'} = sub {$errtxt = $_[0]};
@@ -205,10 +201,10 @@ sub DESTROY {
 
 sub lese_Fileliste {
   my $self = shift;
-  my @args = @_;
   
-  my $eingabe = Configuration->config('Eingabe', 'Eingabeverzeichnis');
-  $self->{fileList} = Utils::fetchFileList($eingabe);
+  my $eingabe           = File::Spec->canonpath(Utils::extendString(Configuration->config('IO', 'Eingabeverzeichnis')));
+  $self->{fileList}     = Utils::fetchFileList($eingabe);
+  $self->{Ausgabedatei} = File::Spec->canonpath(Utils::extendString(Configuration->config('IO', 'Ausgabedatei')));
 }
 
 
@@ -224,142 +220,106 @@ sub nextFile {
 
 sub getInfo() {
   my $self   = shift;
-  my $target = shift;
+  my $type   = shift;
   my $object = shift;
-  my @args   = @_;
-  
-  foreach (@args) {
-    $target->{$_} = join(' ', $object->$_);
+
+  undef($self->{Info}->{$type});
+  my %args = Configuration->config('NMAP ' . $type);
+  foreach (keys %args) {
+    $self->{Info}->{$type}->{$args{$_}} = join(' ', $object->$_) if $args{$_};
   }
   
   return 0;;
 }
   
 
-sub getCipher () {
+sub analyseThis () {
   my $self    = shift;
   my $service = shift;
 
-  my @scriptList = $service->scripts;
-  
-  foreach my $scriptName (@scriptList) {
-    my @scriptContent = $service->scripts($scriptName); 
-    print Dumper($scriptName, @scriptContent); 
-    my $breackpoint;
+  my %info;
+  foreach ('Selfsigned', 'WeakCipherSuite', 'SSLv1', 'SSLv2', 'SSLv3', 'TLSv10', 'TLSv11', 'TLSv12') {$info{$_} = 0}
+  foreach my $script (keys($service->{script})) {
+    my $content = $service->scripts($script)->{contents};
+    my $output  = $service->scripts($script)->{output};
     
-    # html-title-db
-    if      ($scriptName eq "html-title-db") {
-
-    } elsif ($scriptName eq "my-ssl-cert") {
-
-    } elsif ($scriptName eq "my-ssl-enum-ciphers") {
-
-    } elsif ($scriptName eq "") {
-
-    } elsif ($scriptName eq "") {
-
-    } elsif ($scriptName eq "") {
-
+    if ($script eq "html-title-db") {
+      $info{HTML_Title} = $output;
+    } elsif ($script eq "my-ssl-cert") {
+      foreach (keys(%$content)) {
+        my $item = $content->{$_};
+        if (($_ eq 'subject')  && defined($item->{commonName})) {$info{SubjectCN}   = $item->{commonName}}
+        if (($_ eq 'issuer')   && defined($item->{commonName})) {$info{IssuerCN}    = $item->{commonName}}
+        if (($_ eq 'pubkey')   && defined($item->{type}))       {$info{CertKeyType} = $item->{type}}
+        if (($_ eq 'pubkey')   && defined($item->{bits}))       {$info{KeyBits}     = $item->{bits}}
+        if (($_ eq 'validity') && defined($item->{notBefore}))  {$info{ValidFrom}   = $item->{notBefore}}
+        if (($_ eq 'validity') && defined($item->{notAfter}))   {$info{ValidTo}     = $item->{notAfter}}
+        if  ($_ eq 'pem')                                       {$info{CertPEM}     = $item}
+        if  ($_ eq 'sha1')                                      {$info{CertSHA1}    = $item}
+      }
+    } elsif ($script eq "my-ssl-enum-ciphers") {
+      $info{CipherSet} = $output;
+      my %cipher;
+      foreach my $secType (keys(%$content)) {
+        my $item = $content->{$secType};
+        if ((ref($item) eq 'HASH') && defined($item->{ciphers})) {
+          foreach (@{$item->{ciphers}}) {
+            if (defined($_->{strength}) && defined($_->{name})) {
+              $cipher{$secType}{$_->{strength}} .= "$_->{name} ";
+              $info{WeakCipherSuite} |= ($_->{strength} eq 'weak');
+            }
+          }
+          $secType =~ s/\.//g;
+          $info{$secType} = 1;
+        }
+      }
     }        
   }
+  $info{Selfsigned} |= (defined($info{SubjectCN}) && defined($info{IssuerCN}) && ($info{SubjectCN} eq $info{IssuerCN}));
+  $self->{Info}->{Script} = \%info if (%info);
+}
   
-  # CERTIFICATE DETAILS
-#  foreach my $scr (@scriptList) {
-#    if ($scr eq "html-title-db") { 
-#      $html_title = [string]$scr.output
-#      $html_title = $html_title.Replace( "`n", "").Replace("`r", "").Replace(",", "")
-#    } elseif ($scr.id -eq "my-ssl-cert") { 
-#      foreach ($t in $scr.table) {
-#        if ($t.key -eq "subject") {
-#          foreach ($e in $t.elem) {
-#            if ($e.key -eq "commonName") { 
-#              $subject_common_name = $e.InnerXML
-#            }
-#          }
-#        } elseif ($t.key -eq "issuer") {
-#          foreach ($e in $t.elem) {
-#            if ($e.key -eq "commonName") { 
-#              $issuer_common_name = $e.InnerXML
-#            }
-#          }
-#        } elseif ($t.key -eq "pubkey") {
-#          foreach ($e in $t.elem) {
-#            if ($e.key -eq "type") { 
-#              $cert_key_type = $e.InnerXML
-#            }
-#            if ($e.key -eq "bits") { 
-#              $cert_key_bits = $e.InnerXML
-#            }
-#          }
-#        } elseif ($t.key -eq "validity") {
-#          foreach ($e in $t.elem) {
-#            if ($e.key -eq "notBefore") { 
-#              $cert_not_before = [string]$e.InnerXML
-#              $cert_not_before = $cert_not_before.Substring(0,10)
-#            }
-#            if ($e.key -eq "notAfter") { 
-#              $cert_not_after = [string]$e.InnerXML
-#              $cert_not_after = $cert_not_after.Substring(0,10)
-#            }
-#          }          
-#        } else {
-#          # ERROR HANDLING !!!!
-#        }
-#      }
-#         
-#      $cert_filename = Write-Certificate($scr)
-#      # FIXME INVOKE OPENSSL CERTIFICATE ANALYSIS HERE
-#    } elseif ($scr.id -eq "my-ssl-enum-ciphers" )
-#    # SCAN FOR WEAK SSL CIPHERS
-#      {
-#         foreach( $tv in $scr.table )
-#         {
-#                  $SSLTLS_version = $tv.key
-#          $SSLTLS_supported["$SSLTLS_version"] = "true"
-#          
-#          # FIXME USE GT IT SECURITY APPROVED CIPHERSUITES
-#          foreach( $t in $tv.table )
-#          {
-#                 if( $t.key -eq "ciphers" )
-#             {
-#                        foreach( $t2 in $t.table )
-#                        {
-#            
-#                 $isweak = ""
-#               $csuite = ""
-#                           foreach( $e in $t2.elem )
-#               {           
-#                  if( $e.key -eq "strength" )
-#                  {
-#                     $isweak = $e.InnerXML
-#                  }
-#                  elseif( $e.key -eq "name")
-#                  {
-#                     $csuite = $e.InnerXML
-#                  }
-#               }                
-#               
-#                           if( $isweak -eq "weak" )
-#                           {
-#                  $cipher_suite_bad["$SSLTLS_version"] += "$csuite" + " "
-#               }
-#               else
-#               {
-#                  $cipher_suite_good["$SSLTLS_version"] += "$csuite" + " "
-#               }
-#                        }          
-#             }
-#                  }
-#         }
-#               $cipher_suite_weak = $scr.elem.InnerXML         
-#      }
-#     }
-#     
-#     if ( $subject_common_name -eq $issuer_common_name )
-#     {
-#        $self_signed = "true"
-#     }   
-#    }
+
+sub outputInfo() {
+  my $self = shift;
+  
+  my $infostr;
+  # From File
+  $infostr .= "$self->{Info}->{File}->{Date}; ";
+  $infostr .= "$self->{Info}->{File}->{Region}; ";
+
+  # From Host
+  $infostr .= "$self->{Info}->{Host}->{Host_IP}; ";
+  $infostr .= "$self->{Info}->{Host}->{Hostname}; ";
+   
+  # From OS
+  
+  # From Service
+  
+  # From Script
+  $infostr .= "$self->{Info}->{Script}->{HTML_Title}; ";
+  $infostr .= "$self->{Info}->{Script}->{SubjectCN}; ";
+  $infostr .= "$self->{Info}->{Script}->{IssuerCN}; ";
+  $infostr .= "$self->{Info}->{Script}->{Selfsigned}; ";
+  $infostr .= "$self->{Info}->{Script}->{CertKeyType}; ";
+  $infostr .= "$self->{Info}->{Script}->{KeyBits}; ";
+  $infostr .= "$self->{Info}->{Script}->{CertSHA1}; ";
+  $infostr .= "$self->{Info}->{Script}->{CertPEM}; ";
+  $infostr .= "$self->{Info}->{Script}->{ValidFrom}; ";
+  $infostr .= "$self->{Info}->{Script}->{ValidTo}; ";
+  $infostr .= "$self->{Info}->{Script}->{WeakCipherSuite}; ";
+  $infostr .= "$self->{Info}->{Script}->{SSLv1}; ";
+  $infostr .= "$self->{Info}->{Script}->{SSLv2}; ";
+  $infostr .= "$self->{Info}->{Script}->{SSLv3}; ";
+  $infostr .= "$self->{Info}->{Script}->{TLSv10}; ";
+  $infostr .= "$self->{Info}->{Script}->{TLSv11}; ";
+  $infostr .= "$self->{Info}->{Script}->{TLSv12}; ";
+  $infostr .= "$self->{Info}->{Script}->{CipherSet}";
+  
+  if (defined($self->{Ausgabedatei}) && open(my $outfile, ">>", $self->{Ausgabedatei})) {
+    print $outfile "$infostr\n";
+    close $outfile;
+  }
 }
 
 1;

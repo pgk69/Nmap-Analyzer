@@ -89,16 +89,6 @@ use warnings;
 ##################################################################
 #
 
-# Test der Komandozeilenparameter
-#if (!CmdLine->argument(0) || !CmdLine->argument(1) ||
-#     CmdLine->option('Help')|| CmdLine->option('Version')) {
-#  CmdLine->usage;
-#  if (CmdLine->option('Help') || CmdLine->option('Version')) {
-#    Trace->Exit(0, 1, 0x00002, Configuration->prg, $VERSION);
-#  }
-#  Trace->Exit(1, 0, 0x08003, join(' ', CmdLine->argument()));
-#}
-
 my $scan;
 eval {$scan = NMAPANALYZE->new()};
 if ($@) {
@@ -110,87 +100,47 @@ if ($@) {
 #--------------------------------------------------------------
 $scan->lese_Fileliste();
 
-#my $str_headline = "Date,Region,Host_IP,Hostname,SSLTLS-hit,HTML_Title,SubjectCN,IssuerCN,Selfsigned,CertKeyType,KeyBits,ValidFrom,ValidTo,WeakCipherSuite";
-
-# SSL Protocols
-#my @SSLTLSVer = ("SSLv1", "SSLv2", "SSLv3", "TLSv1.0", "TLSv1.1", "TLSv1.2");
-
-# GT IT SECURITY APPROVED CIPHER SUITES, See dbPolicyportal "SSL/TLS Standard"
-#my @strong_ciphers = ("TLS_DHE_RSA_WITH_AES_128_GCM_SHA256", "TLS_DHE_RSA_WITH_AES_256_GCM_SHA384", "TLS_RSA_WITH_AES_128_GCM_SHA256", "TLS_RSA_WITH_AES_256_GCM_SHA384", "TLS_DHE_RSA_WITH_AES_128_CBC_SHA", "TLS_DHE_RSA_WITH_AES_256_CBC_SHA", "TLS_RSA_WITH_AES_128_CBC_SHA", "TLS_RSA_WITH_AES_256_CBC_SHA", "TLS_RSA_WITH_AES_128_CBC_SHA", "TLS_RSA_WITH_AES_256_CBC_SHA", "TLS_RSA_WITH_3DES_EDE_CBC_SHA", "TLS_RSA_WITH_RC4_128_SHA" );
+my @infoHeadline = ('Date' ,'Region',
+                    'Host_IP', 'Hostname',
+                    'HTML_Title', 
+                    'SubjectCN', 'IssuerCN', 'Selfsigned', 'CertKeyType', 'KeyBits', 
+                    'CertSHA1', 'CertPEM',                   
+                    'ValidFrom', 'ValidTo',
+                    'WeakCipherSuite', 'SSLv1', 'SSLv2', 'SSLv3', 'TLSv10', 'TLSv11', 'TLSv12',
+                    'CipherSet');
+                    
+if (defined($scan->{Ausgabedatei}) && open(my $outfile, ">", $scan->{Ausgabedatei})) {
+  print $outfile join('; ', @infoHeadline) . "\n";
+  close $outfile;
+}
 
 while (my $file_xml = $scan->nextFile()) {
   if ($file_xml =~ m/scanresult\-(20[0-9]{2}[0-1][0-9][0-3][0-9])_[0-2][0-9][0-5][0-9][0-5][0-9]_(Europe|Asia|UK|US).*$/) {
-    my ($date, $region) = ($1, $2);
+    ($scan->{Info}{File}{Date}, $scan->{Info}{File}{Region}) = ($1, $2);
 
     my $np = new Nmap::Parser->parsefile($file_xml);
     my @host_list = $np->all_hosts();
 
-    my (%hostinfo, %serviceinfo,%osinfo);
     my $infostr;
     foreach my $host (@host_list) {
       my @ports = $host->tcp_open_ports();
       if (@ports) {
         # Hostinfos
-        undef(%hostinfo);
-        $scan->getInfo(\%hostinfo, $host, ('status', 
-                                           'addr', 
-                                           'addrtype', 
-                                           'all_hostnames', 
-                                           'extraports_count', 
-                                           'extraports_state', 
-                                           'hostname', 
-                                           'ipv4_addr', 
-                                           'ipv6_addr', 
-                                           'mac_addr', 
-                                           'mac_vendor', 
-                                           'distance', 
-                                           'trace_error'));
+        $scan->getInfo('Host', $host);
 
         # OS Infos     
-        my $os = $host->os_sig();   
-        undef(%osinfo);
-        $scan->getInfo(\%osinfo, $os, ('all_names', 
-                                       'class_accuracy',
-                                       'class_count',
-                                       'names',
-                                       'name_accuracy',
-                                       'name_count',
-                                       'osfamily',
-                                       'osgen',
-                                       'portused_closed',
-                                       'portused_closed',
-                                       'portused_closed',
-                                       'type',
-                                       'vendor'));
+        # $scan->getInfo('OS', $host->os_sig());
 
         foreach my $portid (@ports) {
           # Port Infos        
-          my $service = $host->tcp_service($portid);
-          undef(%serviceinfo);
-          $serviceinfo{tcp_open_port} = $portid;
-          
-          $scan->getInfo(\%serviceinfo, $service, ('name', 
-                                                   'proto',
-                                                   'confidence',
-                                                   'extrainfo',
-                                                   'method',
-                                                   'owner',
-                                                   'product',
-                                                   'port',
-                                                   'rpcnum',
-                                                   'tunnel',
-                                                   'fingerprint',
-                                                   'scripts'));
+          $scan->getInfo('Service', $host->tcp_service($portid));
+          $scan->{Info}{Service}{_tcp_open_port} = $portid;
 
-          if ($serviceinfo{scripts}) {
-            $scan->getCipher($service);
+          if ($scan->{Info}{Service}{_scripts}) {
+            $scan->analyseThis($host->tcp_service($portid));
           }
  
-          $infostr                  = "$date;$region;";
-          foreach (keys(%hostinfo))    {$infostr .= "$_; $hostinfo{$_}; "   }
-          foreach (keys(%osinfo))      {$infostr .= "$_; $osinfo{$_}; "     }
-          foreach (keys(%serviceinfo)) {$infostr .= "$_; $serviceinfo{$_}; "}
-          print "$infostr\n";
+          $scan->outputInfo();
         }
       }
     }
