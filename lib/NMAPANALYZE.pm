@@ -269,8 +269,8 @@ sub analyseThis () {
         if (($_ eq 'issuer')   && defined($item->{commonName})) {$info{IssuerCN}    = $item->{commonName}}
         if (($_ eq 'pubkey')   && defined($item->{type}))       {$info{CertKeyType} = $item->{type}}
         if (($_ eq 'pubkey')   && defined($item->{bits}))       {$info{KeyBits}     = $item->{bits}}
-        if (($_ eq 'validity') && defined($item->{notBefore}))  {$info{ValidFrom}   = $item->{notBefore}}
-        if (($_ eq 'validity') && defined($item->{notAfter}))   {$info{ValidTo}     = $item->{notAfter}}
+        if (($_ eq 'validity') && defined($item->{notBefore}))  {($info{ValidFrom}  = $item->{notBefore}) =~ s/T|\+.*/ /g}
+        if (($_ eq 'validity') && defined($item->{notAfter}))   {($info{ValidTo}    = $item->{notAfter})  =~ s/T|\+.*/ /g}
         if  ($_ eq 'pem')                                       {$info{CertPEM}     = $item}
         if  ($_ eq 'sha1')                                      {$info{CertSHA1}    = $item}
       }
