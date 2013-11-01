@@ -35,15 +35,18 @@ $SVN = $VERSION . ' ' . SVN_ID;
 
 $| = 1;
 
-# use lib $Bin . "/lib";       # fuer Aufruf mit voll qualifiziertem Pfad noetig
-# use lib "./lib";    # fuer perl2exe noetig
-
-#use lib $Bin . "/lib/NMAPANALYZE"; # fuer Aufruf mit voll qualifiziertem Pfad noetig
-#use lib "./lib/NMAPANALYZE";       # fuer perl2exe noetig
-
 #
 # Module
 #
+use Fcntl;
+use FindBin qw($Bin $Script $RealBin $RealScript);
+use Data::Dumper;
+use Nmap::Parser;
+
+use lib $Bin . "/lib";
+use lib $Bin . "/lib/NMAPANALYZE";
+use lib $Bin . "/../Framework/lib";
+
 use CmdLine;
 use Trace;
 use Configuration;
@@ -52,11 +55,6 @@ use Configuration;
 use NMAPANALYZE;
 # use NMAPANALYZE::Modul1;
 # use NMAPANALYZE::Modul2;
-
-use Fcntl;
-use FindBin qw($Bin $Script $RealBin $RealScript);
-use Data::Dumper;
-use Nmap::Parser;
 
 #
 # Variablendefinition
