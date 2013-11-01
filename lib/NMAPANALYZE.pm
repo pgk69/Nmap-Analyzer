@@ -145,13 +145,7 @@ sub _init {
 
   # Module::Refresh->refresh;
   
-  # Test der benoetigten INI-Variablen
-  # DB-Zugriff
-  #$self->Exit(1, 0, 0x08002, 'DB', 'DB')                if (!defined($self->config('DB', 'DB')));
-
-  # Ergebnisausgabe und Sicherung
-  #$self->Exit(1, 0, 0x08002, 'Ausgabe', 'Out')             if (!defined($self->config('Ausgabe', 'Out')));
-
+  # Lockfile
   if (Configuration->config('Prg', 'LockFile')) {
     $self->{LockFile} = File::Spec->canonpath(Utils::extendString(Configuration->config('Prg', 'LockFile'), "BIN|$Bin|SCRIPT|" . uc($Script)));
     $self->{Lock} = LockFile::Simple->make(-max => 5, -delay => 1, -format => '%f', -autoclean => 1, -stale => 1, -wfunc => undef);
@@ -171,6 +165,28 @@ sub _init {
     }
   }
   $self->{AutoCommit} = Configuration->config('DB', 'AUTOCOMMIT') || 0;
+
+  # Ausgabeverzeichnisse
+  if (Configuration->config('IO', 'Ausgabedatei')) {
+    my $tmp = File::Spec->canonpath(Utils::extendString(Configuration->config('IO', 'Ausgabedatei')));
+    if (Utils::mk_dir($tmp)) {
+      Trace->Exit(0x103, 0, dirname($tmp), $@);
+    }
+    $self->{Ausgabedatei} = $tmp;
+  }
+  if (Configuration->config('IO', 'Certverzeichnis')) {
+    my $tmp  = File::Spec->canonpath(Utils::extendString(Configuration->config('IO', 'Certverzeichnis') . "/dummy"));
+     if (Utils::mk_dir($tmp)) {
+      Trace->Exit(0x104, 0, dirname(File::Spec->canonpath(Utils::extendString(Configuration->config('IO', 'Certverzeichnis')))), $@);
+    }
+    $self->{Certdir}      = File::Spec->canonpath(Utils::extendString(Configuration->config('IO', 'Certverzeichnis')));
+  }
+
+  # DB-Zugriff
+  if (Configuration->config('DB', 'RDBMS')) {
+    my $stmt = 'INSERT INTO ' . Configuration->config('DB', 'DB') . ' (Date, Region, Host_IP, Hostname, HTML_Title, SubjectCN, IssuerCN, Selfsigned, CertKeyType, KeyBits, CertSHA1, CertPEM, ValidFrom, ValidTo, WeakCipherSuite, SSLv1, SSLv2, SSLv3, TLSv10, TLSv11, TLSv12, CipherSet) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)';
+    DBAccess->prepare($stmt) or Trace->Exit(0x100, 0, "Error: $DBI::errstr");
+  }
 }
 
 
@@ -204,7 +220,6 @@ sub lese_Fileliste {
   
   my $eingabe           = File::Spec->canonpath(Utils::extendString(Configuration->config('IO', 'Eingabeverzeichnis')));
   $self->{fileList}     = Utils::fetchFileList($eingabe);
-  $self->{Ausgabedatei} = File::Spec->canonpath(Utils::extendString(Configuration->config('IO', 'Ausgabedatei')));
 }
 
 
@@ -224,9 +239,11 @@ sub getInfo() {
   my $object = shift;
 
   undef($self->{Info}->{$type});
-  my %args = Configuration->config('NMAP ' . $type);
+  my %args = Configuration->config('NMAP');
   foreach (keys %args) {
-    $self->{Info}->{$type}->{$args{$_}} = join(' ', $object->$_) if $args{$_};
+    if ($_ =~ m/^${type}\s+([^\s]+)$/) {
+      $self->{Info}->{$type}->{$args{$_}} = join(' ', $object->$1) if $args{$_};
+    }
   }
   
   return 0;;
@@ -283,42 +300,53 @@ sub analyseThis () {
 sub outputInfo() {
   my $self = shift;
   
-  my $infostr;
+  my @infoarr = ();
   # From File
-  $infostr .= "$self->{Info}->{File}->{Date}; ";
-  $infostr .= "$self->{Info}->{File}->{Region}; ";
+  push (@infoarr, $self->{Info}->{File}->{Date});
+  push (@infoarr, $self->{Info}->{File}->{Region});
 
   # From Host
-  $infostr .= "$self->{Info}->{Host}->{Host_IP}; ";
-  $infostr .= "$self->{Info}->{Host}->{Hostname}; ";
-   
-  # From OS
-  
-  # From Service
-  
+  push (@infoarr, $self->{Info}->{Host}->{Host_IP});
+  push (@infoarr, $self->{Info}->{Host}->{Hostname});
+
   # From Script
-  $infostr .= "$self->{Info}->{Script}->{HTML_Title}; ";
-  $infostr .= "$self->{Info}->{Script}->{SubjectCN}; ";
-  $infostr .= "$self->{Info}->{Script}->{IssuerCN}; ";
-  $infostr .= "$self->{Info}->{Script}->{Selfsigned}; ";
-  $infostr .= "$self->{Info}->{Script}->{CertKeyType}; ";
-  $infostr .= "$self->{Info}->{Script}->{KeyBits}; ";
-  $infostr .= "$self->{Info}->{Script}->{CertSHA1}; ";
-  $infostr .= "$self->{Info}->{Script}->{CertPEM}; ";
-  $infostr .= "$self->{Info}->{Script}->{ValidFrom}; ";
-  $infostr .= "$self->{Info}->{Script}->{ValidTo}; ";
-  $infostr .= "$self->{Info}->{Script}->{WeakCipherSuite}; ";
-  $infostr .= "$self->{Info}->{Script}->{SSLv1}; ";
-  $infostr .= "$self->{Info}->{Script}->{SSLv2}; ";
-  $infostr .= "$self->{Info}->{Script}->{SSLv3}; ";
-  $infostr .= "$self->{Info}->{Script}->{TLSv10}; ";
-  $infostr .= "$self->{Info}->{Script}->{TLSv11}; ";
-  $infostr .= "$self->{Info}->{Script}->{TLSv12}; ";
-  $infostr .= "$self->{Info}->{Script}->{CipherSet}";
+  push (@infoarr, $self->{Info}->{Script}->{HTML_Title});
+  push (@infoarr, $self->{Info}->{Script}->{SubjectCN});
+  push (@infoarr, $self->{Info}->{Script}->{IssuerCN});
+  push (@infoarr, $self->{Info}->{Script}->{Selfsigned});
+  push (@infoarr, $self->{Info}->{Script}->{CertKeyType});
+  push (@infoarr, $self->{Info}->{Script}->{KeyBits});
+  push (@infoarr, $self->{Info}->{Script}->{CertSHA1});
+  push (@infoarr, $self->{Info}->{Script}->{CertPEM});
+  push (@infoarr, $self->{Info}->{Script}->{ValidFrom});
+  push (@infoarr, $self->{Info}->{Script}->{ValidTo});
+  push (@infoarr, $self->{Info}->{Script}->{WeakCipherSuite});
+  push (@infoarr, $self->{Info}->{Script}->{SSLv1});
+  push (@infoarr, $self->{Info}->{Script}->{SSLv2});
+  push (@infoarr, $self->{Info}->{Script}->{SSLv3});
+  push (@infoarr, $self->{Info}->{Script}->{TLSv10});
+  push (@infoarr, $self->{Info}->{Script}->{TLSv11});
+  push (@infoarr, $self->{Info}->{Script}->{TLSv12});
+  push (@infoarr, $self->{Info}->{Script}->{CipherSet});
+
+  # ggf. Ausgabedatei schreiben
+  if ($self->{Ausgabedatei}) {
+    my $infostr = join('; ', @infoarr);
+    Trace->Log('Ausgabe', $infostr);
+  }
   
-  if (defined($self->{Ausgabedatei}) && open(my $outfile, ">>", $self->{Ausgabedatei})) {
-    print $outfile "$infostr\n";
-    close $outfile;
+  # ggf. DB-Eintrag schreiben
+  if (Configuration->config('DB', 'RDBMS')) {
+    DBAccess->execute(@infoarr) or Trace->Exit(0x101, 0, "Error: $DBI::errstr");
+    DBAccess->autocommit();
+    my $seq = DBAccess->getseq();
+    # ggf. Cert schreiben
+    if ($seq ne '-1' && $self->{Certdir}) {
+      my $filename = File::Spec->catfile(File::Spec->canonpath($self->{Certdir}), sprintf('%010s', $seq) . '.pem');
+      Utils::writeFile(SRCCONTENT => $self->{Info}->{Script}->{CertPEM}, 
+                       DSTFILE    => $filename, 
+                       FORCE      => 1);
+    }
   }
 }
 

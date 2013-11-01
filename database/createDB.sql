@@ -1,4 +1,6 @@
-CREATE TABLE CERTFINDINGS(Date DATETIME,
+CREATE TABLE CERTFINDINGS(id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                          PRIMARY KEY (id),
+                          Date DATETIME,
                           Region VARCHAR(20),
 						  Host_IP VARCHAR(20),
 						  Hostname VARCHAR(250),

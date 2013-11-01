@@ -76,7 +76,7 @@ $VERSION = Trace->new()->version($VERSION);
 $VERSION = Configuration->new()->version($VERSION);
 
 # Datenbank-Objekt: Regelt dei Datenbankzugriffe
-#$VERSION = DBAccess->new()->version($VERSION);
+$VERSION = DBAccess->new()->version($VERSION);
 
 # Kopie des Fehlerkanals erstellen zur gelegentlichen Abschaltung
 no warnings;
@@ -109,9 +109,10 @@ my @infoHeadline = ('Date' ,'Region',
                     'WeakCipherSuite', 'SSLv1', 'SSLv2', 'SSLv3', 'TLSv10', 'TLSv11', 'TLSv12',
                     'CipherSet');
                     
-if (defined($scan->{Ausgabedatei}) && open(my $outfile, ">", $scan->{Ausgabedatei})) {
-  print $outfile join('; ', @infoHeadline) . "\n";
-  close $outfile;
+if ($scan->{Ausgabedatei}) {
+  if (!Trace->Log('Ausgabe', Configuration->config('IO', 'Ausgabedatei'), '0111')) {
+    Trace->Exit(0x105, 0, $scan->{Ausgabedatei}, $@);
+  }
 }
 
 while (my $file_xml = $scan->nextFile()) {
@@ -145,6 +146,11 @@ while (my $file_xml = $scan->nextFile()) {
       }
     }
   } 
+}
+
+if (Configuration->config('DB', 'RDBMS')) {
+  DBAccess->commit();
+  DBAccess->finish();
 }
 
 
