@@ -333,6 +333,8 @@ sub outputInfo() {
   push (@infoarr, $self->{Info}->{Script}->{TLSv12});
   push (@infoarr, $self->{Info}->{Script}->{CipherSet});
 
+  @infoarr = map {defined($_) ? $_ : ''} @infoarr;
+
   # ggf. Ausgabedatei schreiben
   if ($self->{Ausgabedatei}) {
     my $infostr = join('; ', @infoarr);
