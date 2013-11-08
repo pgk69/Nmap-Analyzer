@@ -76,11 +76,15 @@ sub version {
 
   $OVERSION =~ m/^([^\s]*)\sR([0-9]*)$/;
   my ($oVer, $oRel) = ($1, $2);
-  
+  $oVer = 1 if (!$oVer);
+  $oRel = 0 if (!$oRel);
+
   if (defined($pversion)) {
     $pversion =~ m/^([^\s]*)\sR([0-9]*)$/;
     my ($pVer, $pRel) = ($1, $2);
-    $VERSION = $oRel > $pRel ? "$pVer R$oRel" : "$pVer R$pRel";
+    $pVer = 1 if (!$pVer);
+    $pRel = 0 if (!$pRel);
+    $VERSION = $oRel gt $pRel ? "$pVer R$oRel" : "$pVer R$pRel";
   }
 
   return wantarray() ? ($VERSION, $OVERSION) : $VERSION;
@@ -111,8 +115,8 @@ sub _init {
   $self->{Startzeit} = time();
   
   $VERSION = $self->version(shift(@args));
-  
-  Trace->Trc('S', 1, 0x00001, Configuration->prg, $VERSION . " (" . $$ . ")" . " Test: " . Trace->test . " Parameter: " . CmdLine->new()->{ArgStrRAW});
+ 
+  Trace->Trc('S', 1, 0x00001, Configuration->prg, $VERSION . " (" . $$ . ")" . " Test: " . Trace->test() . " Parameter: " . CmdLine->new()->{ArgStrgRAW});
   
   if (Configuration->config('Prg', 'Plugin')) {
 
