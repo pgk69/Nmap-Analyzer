@@ -108,7 +108,7 @@ my @infoHeadline = ('Date' ,'Region',
                     'CipherSet');
                     
 if ($scan->{Ausgabedatei}) {
-  if (!Trace->Log('Ausgabe', Configuration->config('IO', 'Ausgabedatei'), '0111')) {
+  if (!Trace->Log('Ausgabe', $scan->{Ausgabedatei}, '0111')) {
     Trace->Exit(0x105, 0, $scan->{Ausgabedatei}, $@);
   }
 }
