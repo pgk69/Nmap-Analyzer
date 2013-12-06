@@ -303,8 +303,42 @@ sub analyseThis () {
 
 sub outputInfo() {
   my $self = shift;
+
+  # if KeyBits are not defined or CertKeyType is not defined exit immediately without outputting thsi line
+  return 0 if (!$self->{Info}->{Script}->{KeyBits} || !$self->{Info}->{Script}->{CertKeyType});
+
+  # Replace CR, LR and Semicolon if present in HTML_Title
+  if (defined($self->{Info}->{Script}->{HTML_Title})) {
+    $self->{Info}->{Script}->{HTML_Title} =~ s/\r|\n|\;//g;
+  }
   
   my @infoarr = ();
+
+  # ggf. Ausgabedatei schreiben
+  if ($self->{Ausgabedatei}) {
+    @infoarr = ();
+    # From File
+    push (@infoarr, $self->{Info}->{File}->{Date});
+    push (@infoarr, $self->{Info}->{File}->{Region});
+
+    # From Host
+    push (@infoarr, $self->{Info}->{Host}->{Host_IP});
+    push (@infoarr, $self->{Info}->{Host}->{Hostname});
+
+    # From Script
+    foreach ('HTML_Title', 'SubjectCN', 'IssuerCN', 'Selfsigned', 'CertKeyType', 'KeyBits', 'CertSHA1', 
+             'ValidFrom', 'ValidTo', 'WeakCipherSuite', 'SSLv1', 'SSLv2', 'SSLv3', 'TLSv10', 'TLSv11', 
+             'TLSv12') {
+      push (@infoarr, $self->{Info}->{Script}->{$_});
+    }
+
+    @infoarr = map {defined($_) ? $_ : ''} @infoarr;
+
+    my $infostr = join('; ', @infoarr);
+    Trace->Log('Ausgabe', $infostr);
+  }
+
+  @infoarr = ();
   # From File
   push (@infoarr, $self->{Info}->{File}->{Date});
   push (@infoarr, $self->{Info}->{File}->{Region});
@@ -314,67 +348,14 @@ sub outputInfo() {
   push (@infoarr, $self->{Info}->{Host}->{Hostname});
 
   # From Script
-  if (defined($self->{Info}->{Script}->{HTML_Title})) {
-    $self->{Info}->{Script}->{HTML_Title} =~ s/\r|\n|\;//g;
+  foreach ('HTML_Title', 'SubjectCN', 'IssuerCN', 'Selfsigned', 'CertKeyType', 'KeyBits', 'CertSHA1', 
+           'CertPEM', 'ValidFrom', 'ValidTo', 'WeakCipherSuite', 'SSLv1', 'SSLv2', 'SSLv3', 'TLSv10', 
+           'TLSv11', 'TLSv12', 'CipherSet') {
+    push (@infoarr, $self->{Info}->{Script}->{$_})
   }
-  return 0 if (!$self->{Info}->{Script}->{KeyBits} || !$self->{Info}->{Script}->{CertKeyType});
-  push (@infoarr, $self->{Info}->{Script}->{HTML_Title});
-  push (@infoarr, $self->{Info}->{Script}->{SubjectCN});
-  push (@infoarr, $self->{Info}->{Script}->{IssuerCN});
-  push (@infoarr, $self->{Info}->{Script}->{Selfsigned});
-  push (@infoarr, $self->{Info}->{Script}->{CertKeyType});
-  push (@infoarr, $self->{Info}->{Script}->{KeyBits});
-  push (@infoarr, $self->{Info}->{Script}->{CertSHA1});
-  push (@infoarr, $self->{Info}->{Script}->{CertPEM});
-  push (@infoarr, $self->{Info}->{Script}->{ValidFrom});
-  push (@infoarr, $self->{Info}->{Script}->{ValidTo});
-  push (@infoarr, $self->{Info}->{Script}->{WeakCipherSuite});
-  push (@infoarr, $self->{Info}->{Script}->{SSLv1});
-  push (@infoarr, $self->{Info}->{Script}->{SSLv2});
-  push (@infoarr, $self->{Info}->{Script}->{SSLv3});
-  push (@infoarr, $self->{Info}->{Script}->{TLSv10});
-  push (@infoarr, $self->{Info}->{Script}->{TLSv11});
-  push (@infoarr, $self->{Info}->{Script}->{TLSv12});
-  push (@infoarr, $self->{Info}->{Script}->{CipherSet});
 
   @infoarr = map {defined($_) ? $_ : ''} @infoarr;
 
-  # ggf. Ausgabedatei schreiben
-  if ($self->{Ausgabedatei}) {
-    my @infooutarr = ();
-    # From File
-    push (@infooutarr, $self->{Info}->{File}->{Date});
-    push (@infooutarr, $self->{Info}->{File}->{Region});
-
-    # From Host
-    push (@infooutarr, $self->{Info}->{Host}->{Host_IP});
-    push (@infooutarr, $self->{Info}->{Host}->{Hostname});
-
-    # From Script
-    push (@infooutarr, $self->{Info}->{Script}->{HTML_Title});
-    push (@infooutarr, $self->{Info}->{Script}->{SubjectCN});
-    push (@infooutarr, $self->{Info}->{Script}->{IssuerCN});
-    push (@infooutarr, $self->{Info}->{Script}->{Selfsigned});
-    push (@infooutarr, $self->{Info}->{Script}->{CertKeyType});
-    push (@infooutarr, $self->{Info}->{Script}->{KeyBits});
-    push (@infooutarr, $self->{Info}->{Script}->{CertSHA1});
-    # push (@infooutarr, $self->{Info}->{Script}->{CertPEM});
-    push (@infooutarr, $self->{Info}->{Script}->{ValidFrom});
-    push (@infooutarr, $self->{Info}->{Script}->{ValidTo});
-    push (@infooutarr, $self->{Info}->{Script}->{WeakCipherSuite});
-    # push (@infooutarr, $self->{Info}->{Script}->{SSLv1});
-    # push (@infooutarr, $self->{Info}->{Script}->{SSLv2});
-    # push (@infooutarr, $self->{Info}->{Script}->{SSLv3});
-    # push (@infooutarr, $self->{Info}->{Script}->{TLSv10});
-    # push (@infooutarr, $self->{Info}->{Script}->{TLSv11});
-    # push (@infooutarr, $self->{Info}->{Script}->{TLSv12});
-    # push (@infooutarr, $self->{Info}->{Script}->{CipherSet});
-
-    @infooutarr = map {defined($_) ? $_ : ''} @infooutarr;
-
-    my $infostr = join('; ', @infooutarr);
-    Trace->Log('Ausgabe', $infostr);
-  }
   
   # ggf. DB-Eintrag schreiben
   if (Configuration->config('DB', 'RDBMS')) {
