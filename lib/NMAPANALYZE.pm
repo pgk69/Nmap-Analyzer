@@ -314,6 +314,10 @@ sub outputInfo() {
   push (@infoarr, $self->{Info}->{Host}->{Hostname});
 
   # From Script
+  if (defined($self->{Info}->{Script}->{HTML_Title})) {
+    $self->{Info}->{Script}->{HTML_Title} =~ s/\r|\n|\;//g;
+  }
+  return 0 if (!$self->{Info}->{Script}->{KeyBits} || !$self->{Info}->{Script}->{CertKeyType});
   push (@infoarr, $self->{Info}->{Script}->{HTML_Title});
   push (@infoarr, $self->{Info}->{Script}->{SubjectCN});
   push (@infoarr, $self->{Info}->{Script}->{IssuerCN});
@@ -337,7 +341,38 @@ sub outputInfo() {
 
   # ggf. Ausgabedatei schreiben
   if ($self->{Ausgabedatei}) {
-    my $infostr = join('; ', @infoarr);
+    my @infooutarr = ();
+    # From File
+    push (@infooutarr, $self->{Info}->{File}->{Date});
+    push (@infooutarr, $self->{Info}->{File}->{Region});
+
+    # From Host
+    push (@infooutarr, $self->{Info}->{Host}->{Host_IP});
+    push (@infooutarr, $self->{Info}->{Host}->{Hostname});
+
+    # From Script
+    push (@infooutarr, $self->{Info}->{Script}->{HTML_Title});
+    push (@infooutarr, $self->{Info}->{Script}->{SubjectCN});
+    push (@infooutarr, $self->{Info}->{Script}->{IssuerCN});
+    push (@infooutarr, $self->{Info}->{Script}->{Selfsigned});
+    push (@infooutarr, $self->{Info}->{Script}->{CertKeyType});
+    push (@infooutarr, $self->{Info}->{Script}->{KeyBits});
+    push (@infooutarr, $self->{Info}->{Script}->{CertSHA1});
+    # push (@infooutarr, $self->{Info}->{Script}->{CertPEM});
+    push (@infooutarr, $self->{Info}->{Script}->{ValidFrom});
+    push (@infooutarr, $self->{Info}->{Script}->{ValidTo});
+    push (@infooutarr, $self->{Info}->{Script}->{WeakCipherSuite});
+    # push (@infooutarr, $self->{Info}->{Script}->{SSLv1});
+    # push (@infooutarr, $self->{Info}->{Script}->{SSLv2});
+    # push (@infooutarr, $self->{Info}->{Script}->{SSLv3});
+    # push (@infooutarr, $self->{Info}->{Script}->{TLSv10});
+    # push (@infooutarr, $self->{Info}->{Script}->{TLSv11});
+    # push (@infooutarr, $self->{Info}->{Script}->{TLSv12});
+    # push (@infooutarr, $self->{Info}->{Script}->{CipherSet});
+
+    @infooutarr = map {defined($_) ? $_ : ''} @infooutarr;
+
+    my $infostr = join('; ', @infooutarr);
     Trace->Log('Ausgabe', $infostr);
   }
   

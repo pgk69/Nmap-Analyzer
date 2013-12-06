@@ -137,13 +137,15 @@ while (my $file_xml = $scan->nextFile()) {
 
           if ($scan->{Info}{Service}{_scripts}) {
             $scan->analyseThis($host->tcp_service($portid));
+            $scan->outputInfo();
           }
  
-          $scan->outputInfo();
+#          $scan->outputInfo();
         }
       }
     }
   } 
+  undef($scan->{Info});
 }
 
 if (Configuration->config('DB', 'RDBMS')) {
