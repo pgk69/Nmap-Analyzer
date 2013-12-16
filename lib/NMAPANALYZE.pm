@@ -188,8 +188,15 @@ sub _init {
 
   # DB-Zugriff
   if (Configuration->config('DB', 'RDBMS')) {
+    # Anlegen des Cursors (0) zum Speichern der neuen Wert in die DB
     my $stmt = 'INSERT INTO ' . Configuration->config('DB', 'DB') . ' (Date, Region, Host_IP, Hostname, HTML_Title, SubjectCN, IssuerCN, Selfsigned, CertKeyType, KeyBits, CertSHA1, CertPEM, ValidFrom, ValidTo, WeakCipherSuite, SSLv1, SSLv2, SSLv3, TLSv10, TLSv11, TLSv12, CipherSet) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)';
-    DBAccess->prepare($stmt) or Trace->Exit(0x100, 0, "Error: $DBI::errstr");
+    DBAccess->prepare($stmt, 0) or Trace->Exit(0x100, 0, "Error: $DBI::errstr");
+    
+    # Anlegen des Cursors (1) zum Ermitteln der Anreicherungswerte
+    # AENDERN
+    $stmt = 'SELECT (Value1, Value2, Value3 FROM ' . Configuration->config('DB', 'ENRICHMENTDB') . ' WHERE SVal1 = ? AND SVal2 = ?';
+    DBAccess->prepare($stmt, 1) or Trace->Exit(0x100, 0, "Error: $DBI::errstr");
+
   }
 }
 
@@ -341,8 +348,20 @@ sub outputInfo() {
     Trace->Log('Ausgabe', $infostr);
   }
   
-  # ggf. DB-Eintrag schreiben
   if (Configuration->config('DB', 'RDBMS')) {
+    # Anreichern der Datenbank mit Werten aus einer anderen Datenbank
+    DBAccess->setidx(1);
+    # AENDERN
+    # SELECT (Value1, Value2, Value3 FROM ' . Configuration->config('DB', 'ENRICHMENTDB') . ' WHERE SVal1 = ? AND SVal2 = ?';
+    DBAccess->execute($self->{Info}->{Script}->{SubjectCN}, $self->{Info}->{Script}->{ValidFrom}, $self->{Info}->{Script}->{ValidTo}) or Trace->Exit(0x101, 0, "Error: $DBI::errstr");
+    if (my $ref = Utils::hmap(sub {defined($_) ? $_ : ''}, DBAccess->fetchrow_hashref())) {
+      push (@infoarr, $$ref{VALUE1});
+      push (@infoarr, $$ref{VALUE2});
+      push (@infoarr, $$ref{VALUE3});
+    }
+
+    # ggf. DB-Eintrag schreiben
+    DBAccess->setidx(0);
     DBAccess->execute(@infoarr) or Trace->Exit(0x101, 0, "Error: $DBI::errstr");
     DBAccess->autocommit();
     my $seq = DBAccess->getseq();

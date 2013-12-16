@@ -147,6 +147,10 @@ while (my $file_xml = $scan->nextFile()) {
 }
 
 if (Configuration->config('DB', 'RDBMS')) {
+  DBAccess->setidx(0);
+  DBAccess->commit();
+  DBAccess->finish();
+  DBAccess->setidx(1);
   DBAccess->commit();
   DBAccess->finish();
 }
