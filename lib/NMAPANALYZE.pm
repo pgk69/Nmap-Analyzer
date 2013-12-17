@@ -193,9 +193,9 @@ sub _init {
     DBAccess->prepare($stmt, 0) or Trace->Exit(0x100, 0, "Error: $DBI::errstr");
     
     # Anlegen des Cursors (1) zum Ermitteln der Anreicherungswerte
-    # AENDERN
+    # KOMMENTAR ENTFERNEN UND AENDERN
     $stmt = 'SELECT (Value1, Value2, Value3 FROM ' . Configuration->config('DB', 'ENRICHMENTDB') . ' WHERE SVal1 = ? AND SVal2 = ?';
-    DBAccess->prepare($stmt, 1) or Trace->Exit(0x100, 0, "Error: $DBI::errstr");
+    # DBAccess->prepare($stmt, 1) or Trace->Exit(0x100, 0, "Error: $DBI::errstr");
 
   }
 }
@@ -366,15 +366,15 @@ sub outputInfo() {
   
   if (Configuration->config('DB', 'RDBMS')) {
     # Anreichern der Datenbank mit Werten aus einer anderen Datenbank
-    DBAccess->setidx(1);
-    # AENDERN
-    # SELECT (Value1, Value2, Value3 FROM ' . Configuration->config('DB', 'ENRICHMENTDB') . ' WHERE SVal1 = ? AND SVal2 = ?';
-    DBAccess->execute($self->{Info}->{Script}->{SubjectCN}, $self->{Info}->{Script}->{ValidFrom}, $self->{Info}->{Script}->{ValidTo}) or Trace->Exit(0x101, 0, "Error: $DBI::errstr");
-    if (my $ref = Utils::hmap(sub {defined($_) ? $_ : ''}, DBAccess->fetchrow_hashref())) {
-      push (@infoarr, $$ref{VALUE1});
-      push (@infoarr, $$ref{VALUE2});
-      push (@infoarr, $$ref{VALUE3});
-    }
+    # Beispiel SELECT-Statement: SELECT (Value1, Value2, Value3 FROM ' . Configuration->config('DB', 'ENRICHMENTDB') . ' WHERE SVal1 = ? AND SVal2 = ?';
+    # KOMMENTAR ENTFERNEN UND AENDERN
+#    DBAccess->setidx(1);
+#    DBAccess->execute($self->{Info}->{Script}->{SubjectCN}, $self->{Info}->{Script}->{ValidFrom}, $self->{Info}->{Script}->{ValidTo}) or Trace->Exit(0x101, 0, "Error: $DBI::errstr");
+#    if (my $ref = Utils::hmap(sub {defined($_) ? $_ : ''}, DBAccess->fetchrow_hashref())) {
+#      push (@infoarr, $$ref{VALUE1});
+#      push (@infoarr, $$ref{VALUE2});
+#      push (@infoarr, $$ref{VALUE3});
+#    }
 
     # ggf. DB-Eintrag schreiben
     DBAccess->setidx(0);
