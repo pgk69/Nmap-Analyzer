@@ -189,7 +189,7 @@ sub _init {
   # DB-Zugriff
   if (Configuration->config('DB', 'RDBMS')) {
     # Anlegen des Cursors (0) zum Speichern der neuen Wert in die DB
-    my $stmt = 'INSERT INTO ' . Configuration->config('DB', 'DB') . ' (Date, Region, Host_IP, Hostname, HTML_Title, SubjectCN, IssuerCN, Selfsigned, CertKeyType, KeyBits, CertSHA1, CertPEM, ValidFrom, ValidTo, WeakCipherSuite, SSLv1, SSLv2, SSLv3, TLSv10, TLSv11, TLSv12, CipherSet) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)';
+    my $stmt = 'INSERT INTO ' . Configuration->config('DB', 'DB') . ' (Date, Region, Host_IP, Hostname, Port, HTML_Title, SubjectCN, IssuerCN, Selfsigned, CertKeyType, KeyBits, CertSHA1, CertPEM, ValidFrom, ValidTo, WeakCipherSuite, SSLv1, SSLv2, SSLv3, TLSv10, TLSv11, TLSv12, CipherSet) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)';
     DBAccess->prepare($stmt, 0) or Trace->Exit(0x100, 0, "Error: $DBI::errstr");
     
     # Anlegen des Cursors (1) zum Ermitteln der Anreicherungswerte
@@ -213,7 +213,7 @@ sub DESTROY {
     while ( defined( caller( ++$i ) ) ) {
       $routine .= ( caller($i) )[3] . '(' . ( caller( $i - 1 ) )[2] . '):';
     }
-    Trace->Trc('S', 1, 0x00007, "$routine $@ $! $?");
+    Trace->Trc('S', 1, 0x00002, "$routine $@ $! $?");
     Trace->Log('Log', 0x10013, $@, $!, $?);
   }
   for my $parent (@ISA) {
@@ -332,6 +332,9 @@ sub outputInfo() {
     push (@infoarr, $self->{Info}->{Host}->{Host_IP});
     push (@infoarr, $self->{Info}->{Host}->{Hostname});
 
+    # From Service
+    push (@infoarr, $self->{Info}->{Service}->{Port});
+
     # From Script
     foreach ('HTML_Title', 'SubjectCN', 'IssuerCN', 'Selfsigned', 'CertKeyType', 'KeyBits', 'CertSHA1', 
              'ValidFrom', 'ValidTo', 'WeakCipherSuite', 'SSLv1', 'SSLv2', 'SSLv3', 'TLSv10', 'TLSv11', 
@@ -353,6 +356,9 @@ sub outputInfo() {
   # From Host
   push (@infoarr, $self->{Info}->{Host}->{Host_IP});
   push (@infoarr, $self->{Info}->{Host}->{Hostname});
+
+  # From Service
+  push (@infoarr, $self->{Info}->{Service}->{Port});
 
   # From Script
   foreach ('HTML_Title', 'SubjectCN', 'IssuerCN', 'Selfsigned', 'CertKeyType', 'KeyBits', 'CertSHA1', 

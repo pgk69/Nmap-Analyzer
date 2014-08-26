@@ -57,10 +57,15 @@
 0x00013 = Programm <%s> kann nicht mehrfach gestartet werden (%s existiert bereits)!
 0x00014 = Lockfile <%s> angelegt.
 
+0x00100 = Bearbeite Datei <%s>.
+0x00101 = Analysiere Host <%s>  Port <%s>  Service <%s>
+
 0x08000 = Fehler beim Schreiben des Logfiles <%s>
 0x08001 = Kann das Modul <%s> nicht laden
 0x08002 = Erforderliche INI-Variable nicht gesetzt: [%s] %s
 0x08003 = Zu wenig oder fehlerhafte Aufrufparameter <%s>
+
+0x08100 = Fehler beim Analysieren der Datei <%s>
 
 ##########################################################################################
 # Modul CmdLine
