@@ -50,7 +50,8 @@ use lib $Bin . "/../Framework/lib";
 use CmdLine;
 use Trace;
 use Configuration;
-#use DBAccess;
+use DBAccess;
+use Utils;
 
 use NMAPANALYZE;
 # use NMAPANALYZE::Modul1;
@@ -113,39 +114,70 @@ if ($scan->{Ausgabedatei}) {
   }
 }
 
+if ($scan->{Statistiskdatei}) {
+  if (!Trace->Log('Statistik', $scan->{Statistiskdatei}, '0111')) {
+    Trace->Exit(0x106, 0, $scan->{Statistiskdatei}, $@);
+  }
+}
+
+my $np;
 while (my $file_xml = $scan->nextFile()) {
   if ($file_xml =~ m/scanresult\-(20[0-9]{2}[0-1][0-9][0-3][0-9])_[0-2][0-9][0-5][0-9][0-5][0-9]_(Europe|Asia|UK|US).*$/) {
     ($scan->{Info}{File}{Date}, $scan->{Info}{File}{Region}) = ($1, $2);
 
-    my $np = new Nmap::Parser->parsefile($file_xml);
-    my @host_list = $np->all_hosts();
+    eval {$np = new Nmap::Parser->parsefile($file_xml)};
+    if ($@) {
+      Trace->Trc('I', 1, 0x08100, $file_xml);
+    } else {
+      Trace->Trc('I', 2, 0x00100, $file_xml);
+      my @host_list = $np->all_hosts();
 
-    my $infostr;
-    foreach my $host (@host_list) {
-      my @ports = $host->tcp_open_ports();
-      if (@ports) {
-        # Hostinfos
-        $scan->getInfo('Host', $host);
+      my $infostr;
+      foreach my $host (@host_list) {
+        my @ports = $host->tcp_ports();
+        #my @ports = $host->tcp_open_ports();
+        if (@ports) {
+          # Hostinfos
+          $scan->getInfo('Host', $host);
 
-        # OS Infos     
-        # $scan->getInfo('OS', $host->os_sig());
+          # OS Infos     
+          # $scan->getInfo('OS', $host->os_sig());
 
-        foreach my $portid (@ports) {
-          # Port Infos        
-          $scan->getInfo('Service', $host->tcp_service($portid));
-          $scan->{Info}{Service}{_tcp_open_port} = $portid;
+          foreach my $portid (@ports) {
+            # Get Portstatus
+            my $state = $host->tcp_port_state($portid);
+            $scan->{StatInfo}{$portid}{$state}++;
+            if ($state eq 'open') {
+              # Port Infos        
+              $scan->getInfo('Service', $host->tcp_service($portid));
 
-          if ($scan->{Info}{Service}{_scripts}) {
-            $scan->analyseThis($host->tcp_service($portid));
-            $scan->outputInfo();
+              if ($scan->{Info}{Service}{_scripts}) {
+                Trace->Trc('I', 2, 0x00101, $scan->{Info}{Host}{Hostname}, $scan->{Info}{Service}{Port}, $scan->{Info}{Service}{_scripts});
+                $scan->analyseThis($host->tcp_service($portid));
+                $scan->outputInfo();
+                if ($scan->{Info}{Service}{_scripts} =~ /ssl/) {
+                  $scan->{StatInfo}{$portid}{'open with cert'}++;
+                } else {
+                  $scan->{StatInfo}{$portid}{'open without cert'}++;
+                }
+              } else {
+                $scan->{StatInfo}{$portid}{'open without cert'}++;
+              }
+            }
           }
- 
-#          $scan->outputInfo();
         }
       }
     }
   } 
   undef($scan->{Info});
+}
+
+foreach my $port (keys(%{$scan->{StatInfo}})) {
+  my @info = (Utils::datum(3), 'Port', $port);
+  foreach my $status (sort(keys(%{$scan->{StatInfo}{$port}}))) {
+    push (@info, $status, $scan->{StatInfo}{$port}{$status});
+  }
+  Trace->Log('Statistik', join('; ', @info));
 }
 
 if (Configuration->config('DB', 'RDBMS')) {

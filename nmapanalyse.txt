@@ -53,14 +53,19 @@
 0x00001 = Starte %s %s
 0x00002 = Beende %s %s
 
-0x00012 = Altes Lockfile gelöscht (%s).
+0x00012 = Altes Lockfile gelï¿½scht (%s).
 0x00013 = Programm <%s> kann nicht mehrfach gestartet werden (%s existiert bereits)!
 0x00014 = Lockfile <%s> angelegt.
+
+0x00100 = Bearbeite Datei <%s>.
+0x00101 = Analysiere Host <%s>  Port <%s>  Service <%s>
 
 0x08000 = Fehler beim Schreiben des Logfiles <%s>
 0x08001 = Kann das Modul <%s> nicht laden
 0x08002 = Erforderliche INI-Variable nicht gesetzt: [%s] %s
 0x08003 = Zu wenig oder fehlerhafte Aufrufparameter <%s>
+
+0x08100 = Fehler beim Analysieren der Datei <%s>
 
 ##########################################################################################
 # Modul CmdLine
@@ -110,21 +115,38 @@
 # Procedure #1
 # Proc Nr. 1 Meldungen: 0x02100-0x021ff
 #            Fehler:    0x0a100-0x0a1ff
+0x02100 = Lese Fileliste aus <%s>
+0x02101 = Fileliste: <%s>
+
+0x0a100 = 
+
 
 # Procedure #2
 # Proc Nr. 2 Meldungen: 0x02200-0x022ff
 #            Fehler:    0x0a200-0x0a2ff
+0x02200 = Verarbeite naechste Datei: <%s>
+
 
 # Procedure #3
 # Proc Nr. 3 Meldungen: 0x02300-0x023ff
 #            Fehler:    0x0a300-0x0a3ff
+0x02300 = Suche Info fuer <%s>
+0x02301 = Info <%s> fuer <%s> <%s> ermittelt: <%s>
 
 # Procedure #4
 # Proc Nr. 4 Meldungen: 0x02400-0x024ff
 #            Fehler:    0x0a400-0x0a4ff
+0x02400 = Analysiere Skript <%s>
+0x02401 = Analysiere Content <%s> (Skript <%s>)
+0x02402 = Analysiere Cipher <%s> (Content <%s> Skript <%s>)
 
 # Procedure #5
 # Proc Nr. 5 Meldungen: 0x02500-0x025ff
 #            Fehler:    0x0a500-0x0a5ff
+0x02500 = Schreibe Ausgabedatei <%s> Eintrag: <%s>
+0x02501 = Anfrage Anreicherungsdatenbank mit <%s> <%s> <%s>
+0x02502 = Ergebnis Anreicherungsdatenbank: <%s> <%s> <%s>
+0x02503 = Schreibe Datenbank Eintrag: <%s>
+0x02504 = Schreibe Zertifikat nach: <%s>
 
 [english]
