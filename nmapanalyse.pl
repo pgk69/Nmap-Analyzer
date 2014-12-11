@@ -172,7 +172,7 @@ while (my $file_xml = $scan->nextFile()) {
   undef($scan->{Info});
 }
 
-foreach my $port (keys(%{$scan->{StatInfo}})) {
+foreach my $port (sort {$a <=> $b} keys(%{$scan->{StatInfo}})) {
   my @info = (Utils::datum(3), 'Port', $port);
   foreach my $status (sort(keys(%{$scan->{StatInfo}{$port}}))) {
     push (@info, $status, $scan->{StatInfo}{$port}{$status});
