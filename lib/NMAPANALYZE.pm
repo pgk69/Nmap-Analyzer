@@ -401,7 +401,6 @@ sub outputInfo() {
     push (@infoarr, $self->{Info}->{Host}->{Hostname});
 
     # From Service
-    # @@@ 
     push (@infoarr, $self->{Info}->{Service}->{Port});
 
     # From Script
@@ -429,6 +428,9 @@ sub outputInfo() {
 
   # From Service
   # @@@ 
+  push (@infoarr, $self->{Info}->{Service}->{Port});
+
+  # From Service
   push (@infoarr, $self->{Info}->{Service}->{Port});
 
   # From Script
