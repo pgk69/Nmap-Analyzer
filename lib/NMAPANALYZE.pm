@@ -379,9 +379,6 @@ sub outputInfo() {
   $self->{subroutine} = (caller(0))[3];
   Trace->Trc('S', 1, 0x00001, $self->{subroutine}, CmdLine->argument(0));
   
-  # if KeyBits are not defined or CertKeyType is not defined exit immediately without outputting thsi line
-  return 0 if (!$self->{Info}->{Script}->{KeyBits} || !$self->{Info}->{Script}->{CertKeyType});
-
   # Replace CR, LR and Semicolon if present in HTML_Title
   if (defined($self->{Info}->{Script}->{HTML_Title})) {
     $self->{Info}->{Script}->{HTML_Title} =~ s/\r|\n|\;//g;
